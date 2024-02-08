@@ -106,7 +106,7 @@ class GameActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun mostrarDialogoGameOver() {
+    private fun mostrarDialogoGameOver() {//TODO hacer que muestre las untuaciones en la actividad de Ranking
         val builder = AlertDialog.Builder(this)
         builder.setMessage("Has cazado $cazados patos").setTitle("Game Over")
         builder.setCancelable(false)
@@ -127,5 +127,6 @@ class GameActivity : AppCompatActivity() {
         }
         val dialogo = builder.create()
         dialogo.show()
+        //transferirDatos()
     }
 }
