@@ -16,4 +16,11 @@
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
     <string name="finalizar">Finalizar</string>
     <string name="ceroseg">0s</string>
+    <string name="ranking">Ranking</string>
+    <string name="_5_0_patos">5º - 0 patos</string>
+    <string name="_4_0_patos">4º - 0 patos</string>
+    <string name="_3_0_patos">3º - 0 patos</string>
+    <string name="_2_0_patos">2º - 0 patos</string>
+    <string name="_1_0_patos">1º - 0 patos</string>
+    <string name="paquillo_ha_cazado_n_patos">Paquillo ha cazado n patos</string>
 </resources>
