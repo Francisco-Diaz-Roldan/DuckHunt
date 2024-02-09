@@ -6,13 +6,12 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
-import android.util.Log
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import com.example.duckhunt.Constantes.Companion.EXTRA_NICK
 import com.example.duckhunt.databinding.ActivityGameBinding
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
+
 import java.util.Random
 
 class GameActivity : AppCompatActivity() {
@@ -30,6 +29,17 @@ class GameActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityGameBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        iniciarIntentLaunch()
+        //leerDatos()
+        initPantalla()
+        inicializarComponentesVisuales()
+        eventos()
+        moverPato()
+        initCuentaAtras()
+    }
+
+    private fun iniciarIntentLaunch() {
         intentLaunch =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
                 if (result.resultCode == RESULT_OK) {
@@ -47,12 +57,6 @@ class GameActivity : AppCompatActivity() {
                     }
                 }
             }
-        leerDatos()
-        initPantalla()
-        inicializarComponentesVisuales()
-        eventos()
-        moverPato()
-        initCuentaAtras()
     }
 
     private fun inicializarComponentesVisuales() {
@@ -60,8 +64,10 @@ class GameActivity : AppCompatActivity() {
         binding.tvCounter.typeface = typeface
         binding.tvTimer.typeface = typeface
         binding.tvNick.typeface = typeface
+
+        // Verificar si intent.extras es nulo antes de usarlo
         val extras = intent.extras
-        nick = extras!!.getString(Constantes.EXTRA_NICK)!!
+        nick = extras?.getString(EXTRA_NICK) ?: ""
         binding.tvNick.text = nick
     }
 
@@ -138,13 +144,13 @@ class GameActivity : AppCompatActivity() {
         val intent = Intent(this@GameActivity, RankingActivity::class.java)
         intent.putExtra("nick", nick)
         intent.putExtra("cazados", cazados)
-        transferirDatos()
+        //transferirDatos()
         val usuarios= ArrayList(listaUsuarios)
         intent.putExtra("listaUsuarios", usuarios)
         startActivity(intent)
     }
 
-    private fun leerDatos() {
+    /*private fun leerDatos() {
         var nombre: String
         var puntos: Long
         var usuario: Usuario
@@ -199,5 +205,5 @@ class GameActivity : AppCompatActivity() {
             insertarDatos(nuevoUsuario)
             return false
         }
-    }
+    }*/
 }

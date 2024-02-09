@@ -3,8 +3,8 @@ package com.example.duckhunt
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Typeface
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import com.example.duckhunt.databinding.ActivityRankingBinding
 
 class RankingActivity : AppCompatActivity() {
@@ -47,7 +47,6 @@ class RankingActivity : AppCompatActivity() {
             binding.txtQuinto.setText("5º - ${listaUsuarios[4].nombre} - ${listaUsuarios[4].puntos} patos")
         }
 
-        cambiarTexto()
         cambiarTexto()
 
         binding.btnFinalizar.setOnClickListener {
