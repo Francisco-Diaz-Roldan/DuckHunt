@@ -6,32 +6,52 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
+import android.util.Log
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import com.example.duckhunt.Constantes.Companion.EXTRA_NICK
 import com.example.duckhunt.databinding.ActivityGameBinding
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 
 import java.util.Random
 
 class GameActivity : AppCompatActivity() {
+
     private lateinit var nick: String
-    private var cazados: Long = 0
+    private var cazados:Long = 0
     private var anchoPantalla = 0
     private var altoPantalla = 0
     private var gameOver = false
     private var aleatorio: Random = Random()
+    private var listaUsuarios = mutableListOf<Usuario>()
     private lateinit var intentLaunch: ActivityResultLauncher<Intent>
     private lateinit var binding: ActivityGameBinding
-    private var listaUsuarios = mutableListOf<Usuario>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityGameBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        iniciarIntentLaunch()
-        //leerDatos()
+        intentLaunch=registerForActivityResult(ActivityResultContracts.StartActivityForResult()){ result: ActivityResult ->
+            Log.d("iLaunch", "he entrado en el intentLaunch")
+            if (result.resultCode == RESULT_OK){
+                val accion = result.data?.extras?.getString("accion")
+                when (accion) {
+                    "Salir" -> finish()
+                    "Reiniciar" -> {
+                        nick = result.data?.extras?.getString("nick")!!
+                        cazados = 0
+                        binding.tvCounter.text = "0"
+                        gameOver = false
+                        initCuentaAtras()
+                        moverPato()
+                    }
+                }
+            }
+        }
+
+        leerDatos()
         initPantalla()
         inicializarComponentesVisuales()
         eventos()
@@ -39,35 +59,13 @@ class GameActivity : AppCompatActivity() {
         initCuentaAtras()
     }
 
-    private fun iniciarIntentLaunch() {
-        intentLaunch =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-                if (result.resultCode == RESULT_OK) {
-                    val accion = result.data?.extras?.getString("accion")
-                    when (accion) {
-                        "Salir" -> finish()
-                        "Reiniciar" -> {
-                            nick = result.data?.extras?.getString("nick")!!
-                            cazados = 0
-                            binding.tvCounter.text = "0"
-                            gameOver = false
-                            initCuentaAtras()
-                            moverPato()
-                        }
-                    }
-                }
-            }
-    }
-
     private fun inicializarComponentesVisuales() {
         val typeface = Typeface.createFromAsset(assets, "pixel.ttf")
         binding.tvCounter.typeface = typeface
         binding.tvTimer.typeface = typeface
         binding.tvNick.typeface = typeface
-
-        // Verificar si intent.extras es nulo antes de usarlo
         val extras = intent.extras
-        nick = extras?.getString(EXTRA_NICK) ?: ""
+        nick = extras!!.getString(Constantes.EXTRA_NICK)!!
         binding.tvNick.text = nick
     }
 
@@ -75,7 +73,7 @@ class GameActivity : AppCompatActivity() {
         binding.ivPato.setOnClickListener {
             if (!gameOver) {
                 cazados++
-                binding.tvCounter.text = cazados.toString()
+                binding.tvCounter.text=cazados.toString()
                 binding.ivPato.setImageResource(R.drawable.duck_clicked)
                 Handler().postDelayed({
                     binding.ivPato.setImageResource(R.drawable.duck)
@@ -87,29 +85,28 @@ class GameActivity : AppCompatActivity() {
 
     private fun initPantalla() {
         val dm1 = resources.displayMetrics
-        anchoPantalla = dm1.widthPixels
-        altoPantalla = dm1.heightPixels
+        anchoPantalla=dm1.widthPixels
+        altoPantalla=dm1.heightPixels
     }
 
-    private fun moverPato() {
-        val maximoX = anchoPantalla - binding.ivPato.width * 2
-        val maximoY = altoPantalla - binding.ivPato.height * 2
+    private fun moverPato(){
+        val maximoX = anchoPantalla - binding.ivPato.width*2
+        val maximoY = altoPantalla - binding.ivPato.height*2
         //Generamos un número aleatorio para la coordenada X y otro para la Y
-        val randomX = aleatorio.nextInt(maximoX + 1)
-        val randomY = aleatorio.nextInt(maximoY + 1)
+        val randomX = aleatorio.nextInt(maximoX+1 )
+        val randomY = aleatorio.nextInt(maximoY+1)
         //Utilizamos los números aleatorios para mover el pato
         binding.ivPato.x = randomX.toFloat()
         binding.ivPato.y = randomY.toFloat()
     }
 
-    private fun initCuentaAtras() {
-        object : CountDownTimer(10000, 1000) {
+    private fun initCuentaAtras(){
+        object : CountDownTimer(20000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val segundosRestantes = millisUntilFinished / 1000
                 val texto = "${segundosRestantes}s"
                 binding.tvTimer.text = texto
             }
-
             override fun onFinish() {
                 binding.tvTimer.text = getString(R.string.ceroseg)
                 gameOver = true
@@ -121,7 +118,7 @@ class GameActivity : AppCompatActivity() {
     private fun mostrarDialogoGameOver() {
         /*
         val builder = AlertDialog.Builder(this)
-        builder.setMessage("Has cazado $cazados patos").setTitle("Game Over")
+        builder.setMessage("Has cazado $cazados patos").setTitle("Fin del juego")
         builder.setCancelable(false)
         builder.setPositiveButton(
             R.string.reiniciar
@@ -141,24 +138,28 @@ class GameActivity : AppCompatActivity() {
         val dialogo = builder.create()
         dialogo.show()
         */
+
         val intent = Intent(this@GameActivity, RankingActivity::class.java)
         intent.putExtra("nick", nick)
         intent.putExtra("cazados", cazados)
-        //transferirDatos()
-        val usuarios= ArrayList(listaUsuarios)
-        intent.putExtra("listaUsuarios", usuarios)
+        transferirDatos()
+        val usuariosSerializable = ArrayList(listaUsuarios)
+        intent.putExtra("listaUsuarios", usuariosSerializable)
+
         startActivity(intent)
     }
 
-    /*private fun leerDatos() {
+    // Metodos para fireBase
+
+    private fun leerDatos() {
         var nombre: String
         var puntos: Long
         var usuario: Usuario
         val db = Firebase.firestore
-        db.collection("puntaciones").get().addOnSuccessListener { result ->
+        db.collection("puntuaciones").get().addOnSuccessListener { result ->
             for (document in result) {
                 nombre = document.id
-                puntos = document.data["puntos"] as Long
+                puntos = document.data.get("puntos") as Long
                 usuario = Usuario(nombre, puntos)
                 listaUsuarios.add(usuario)
             }
@@ -167,24 +168,25 @@ class GameActivity : AppCompatActivity() {
         }
     }
 
-    private fun actualizarDatos(usuario:Usuario){
+    private fun actualizarDatos(usuario: Usuario) {
         val db = Firebase.firestore
         db.collection("puntuaciones").document(usuario.nombre).update("puntos", usuario.puntos).addOnSuccessListener {
             Log.i("Firebase", "Datos actualizados correctamente")
-        }.addOnFailureListener{ error ->
+        }.addOnFailureListener { error ->
             Log.e("FirebaseError", error.message.toString())
         }
     }
 
-    private fun insertarDatos(usuario: Usuario){
+    private fun insertarDatos(usuario: Usuario) {
         val db = Firebase.firestore
         val datos = hashMapOf("puntos" to usuario.puntos)
         db.collection("puntuaciones").document(usuario.nombre).set(datos).addOnSuccessListener {
-            Log.i("Firebase", "Datos insertados correctamente")
-        }.addOnFailureListener{ error->
+            Log.i("Firebase", "Datos actualizados correctamente")
+        }.addOnFailureListener { error ->
             Log.e("FirebaseError", error.message.toString())
         }
     }
+
     private fun transferirDatos(): Boolean {
         val usuarioExistente = listaUsuarios.find { it.nombre == nick }
 
@@ -205,5 +207,5 @@ class GameActivity : AppCompatActivity() {
             insertarDatos(nuevoUsuario)
             return false
         }
-    }*/
+    }
 }
